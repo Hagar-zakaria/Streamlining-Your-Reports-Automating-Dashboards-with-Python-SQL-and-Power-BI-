@@ -43,7 +43,7 @@ Here's an example of the report we'll generate daily.
 
 
 # Importing needed libraries
-'''
+```python
 import pandas as pd
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Numeric
 import os
@@ -51,4 +51,4 @@ import requests
 from datetime import date
 import sqlalchemy
 import pyodbc
-'''
+```
