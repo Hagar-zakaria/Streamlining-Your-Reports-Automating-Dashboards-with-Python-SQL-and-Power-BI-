@@ -50,6 +50,7 @@ import requests
 from datetime import date
 import sqlalchemy
 import pyodbc
+'''
 
 # Getting current date because the data doesn't come with a date column
 now = date.today()
