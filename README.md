@@ -41,8 +41,9 @@ The project aims to analyze revenue growth over time, daily revenue, monitor the
 
 Here's an example of the report we'll generate daily.
 
-'''
+
 # Importing needed libraries
+'''
 import pandas as pd
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Numeric
 import os
