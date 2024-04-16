@@ -40,6 +40,7 @@ In this project, I'll be creating a dynamic dashboard report using data from a c
 The project aims to analyze revenue growth over time, daily revenue, monitor the active cryptocurrency projects generating revenue daily, and track the 24-hour revenue change.
 
 Here's an example of the report we'll generate daily.
+
 '''
 #Importing needed libraries
 import pandas as pd
@@ -192,5 +193,4 @@ concatenate_and_load(chain_df_list)
 SQL_SERVER_CONNECTION.dispose()
 
 cnxn.close()
-
-    '''
+              '''
