@@ -195,3 +195,48 @@ SQL_SERVER_CONNECTION.dispose()
 
 cnxn.close()
 '''
+
+# STEP 2
+
+Automate the python script using either crontab or windows scheduler, in my case I’m using windows scheduler and as seen below the script runs everyday by 6:20am.
+
+![image](https://github.com/Hagar-zakaria/Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-/assets/93611934/e5f83b1f-169f-4b0a-a012-764ee4ea76e4)
+
+# Here's a step-by-step guide on how to use Windows Task Scheduler to automate the execution of a Python script:
+
+1. Open Task Scheduler:
+
+Press Windows + R to open the Run dialog.
+Type taskschd.msc and press Enter to open Task Scheduler.
+
+2. Create a New Task:
+
+In Task Scheduler, click on Create Basic Task in the right-hand panel.
+
+3. Name and Describe the Task:
+
+Enter a name and description for your task to help you identify it later.
+
+4. Choose a Trigger:
+
+Select Daily as the trigger if you want the task to run every day.
+Set the time to 6:20 AM.
+
+5. Action:
+
+Choose Start a program as the action.
+Click Browse and select the Python executable (usually located in C:\PythonXX\python.exe, where XX is the version number).
+In the Add arguments field, provide the path to your Python script. For example, "C:\path\to\your\script.py".
+
+6. Conditions (Optional):
+
+Optionally, you can set conditions for when the task will run. For example, you might want to run it only when the computer is idle.
+
+7. Settings (Optional):
+
+Adjust any additional settings as needed. For example, you can choose to stop the task if it runs for longer than a specified time.
+
+8. Finish:
+
+Review the details of your task and click Finish to create it.
+Your Python script will now run automatically every day at 6:20 AM as scheduled. Make sure to test it to ensure that it runs correctly according to your requirements.
