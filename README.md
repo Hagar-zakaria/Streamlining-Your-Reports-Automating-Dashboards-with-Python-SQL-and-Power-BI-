@@ -42,8 +42,8 @@ The project aims to analyze revenue growth over time, daily revenue, monitor the
 Here's an example of the report we'll generate daily.
 
 
-```python
 #Importing needed libraries
+```python
 import pandas as pd
 from sqlalchemy import create_engine
 import sqlalchemy
@@ -54,14 +54,18 @@ from sqlalchemy import MetaData
 from sqlalchemy import Table, Column, Integer, String, Numeric
 from sqlalchemy.dialects.mysql import VARCHAR
 import pyodbc
+```
 
 #GETTING CURRENT DATE BECAUSE THE DOESN'T COME WITH A DATE COLUMN
+```python
 now = date.today()
 now
 todays_date = now.strftime('%Y/%m/%d')
 todays_date
+```
 
 #EXTRACTING DATA FROM ETHEREUM API
+```python
 eth_api = 'https://api.llama.fi/overview/fees/ethereum?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue'
 params = {'chain':'Ethereum'}
 r = requests.get(eth_api,
@@ -69,8 +73,10 @@ r = requests.get(eth_api,
 eth_json = r.json()
 eth_df = pd.DataFrame(eth_json['protocols'])
 eth_df.head(3)
+```
 
 #CREATING A FUNCTION TO EXTRACT DATA FROM ANY API LINK PROVIDED
+```python
 def extract_from_api(api_url, chain_name,params):
     params = {'chain': chain_name}
     r = requests.get(api_url,
@@ -78,23 +84,28 @@ def extract_from_api(api_url, chain_name,params):
     chain_json = r.json()
     chain_df = pd.DataFrame(chain_json['protocols'])
     return chain_df
+```
 
 #THIS FUNCTION TRANSFORMS THE DATA, AND KEEPS THE NECESSARY COLUMNS NEEDED
+```python
 def transform_data(chain_df, chain_name):
     cols = ['defillamaId', 'name', 'module','category', 'dailyRevenue', 'dailyFees']
     chain_df = chain_df[cols]
     chain_df.insert(4, "CHAIN_NAME", chain_name)
     chain_df.insert(7, "DATE", todays_date)
     return chain_df
+```
 
 #THIS FUNCTION EXECUTES THE SET OF FUNCTIONS CREATED ABOVE 
+```python
 def extract_and_transfrom(api_url, chain_name, params):
     chain_df = extract_from_api(api_url, chain_name, params)
     chain_df = transform_data(chain_df, chain_name)
     return chain_df
-
+```
 
 #RUNNING THE ETL FUNCTIONS CREATED ON EACH API LINK PROVIDED
+```python
 eth_df = extract_and_transfrom('https://api.llama.fi/overview/fees/ethereum?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'ETHEREUM', params)
 
 arb_df = extract_and_transfrom('https://api.llama.fi/overview/fees/arbitrum?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'ARBITRUM', params)
@@ -112,8 +123,10 @@ base_df = extract_and_transfrom('https://api.llama.fi/overview/fees/base?exclude
 solana_df = extract_and_transfrom('https://api.llama.fi/overview/fees/solana?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'SOLANA', params)
 
 cronos_df = extract_and_transfrom('https://api.llama.fi/overview/fees/cronos?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'CRONOS', params)
+```
 
 #PUTTING ALL PANDAS DATAFRAMES INTO A LIST
+```python
 chain_df_list = [eth_df,
                 arb_df,
                 op_df,
@@ -123,14 +136,18 @@ chain_df_list = [eth_df,
                  avalache_df,
                 solana_df,
                 cronos_df]
+```
             
 #IMPORTING SQLALCHEMY LIBRARIES
+```python
 from sqlalchemy import MetaData
 from sqlalchemy import Table, Column, Integer, String, Numeric
 from sqlalchemy.dialects.mysql import VARCHAR
 import pyodbc
+```
 
 #CONNECTING WITH SQL SERVER DATABASE USING SQL ALCHEMY 
+```python
 SERVER = os.environ.get('MS SQL SERVER NAME')
 DRIVER = os.environ.get('MS SQL SERVER DRIVER')
 database_name = 'defi_db'
@@ -147,11 +164,12 @@ cnxn_str = (f"Driver={DRIVER};"
             "Trusted_Connection=yes;")
 cnxn = pyodbc.connect(cnxn_str)
 cursor = cnxn.cursor()
-
+```
 
 #THIS FUNCTION LOADS THE DATA EXTRACTED FROM THE API INTO A SQL SERVER DATABASE
 #ALL THE PANDAS DATAFRAME TABLES GOTTEN FROM THE API CALL AND CONCATENATED INTO 
 #ONE TABLE AND LOADED INTO THE DATABASE USING THIS FUNCTION BELOW
+```python
 def concatenate_and_load(chain_list):
     final_df = pd.concat(chain_list)
     final_df.to_sql('staging_defi_revenue_details', SQL_SERVER_CONNECTION, 
@@ -164,9 +182,11 @@ def concatenate_and_load(chain_list):
                            'dailyRevenue': sqlalchemy.types.Numeric(10,2),
                            'dailyFees':sqlalchemy.types.Numeric(10,2),
                            'DATE': sqlalchemy.types.Date()})
+```
 
 #REMOVING DUPLICATES FROM THE STAGING TABLE BEFORE INSERTING INTO
 #DATA WAREHOUSE TABLE
+```python  
     cursor.execute('with check_for_duplicate_data as (\
                     select defillamaId, name, module, category,\
                     CHAIN_NAME, dailyRevenue, dailyFees, DATE,\
@@ -177,20 +197,28 @@ def concatenate_and_load(chain_list):
                     from [dbo].[staging_defi_revenue_details])\
                     delete from check_for_duplicate_data \
                     where duplicate_count > 1')
+```
 
 #INSERTING INTO DATA WAREHOUSE TABLE
+```python
     cursor.execute('INSERT INTO dbo.DW_DEFI_REVENUE_TABLE 
     (Defi_lama_ID, Dapp_name, Module, Category, Chain_name, Daily_Revenue, 
      Daily_Fees, Date) select * from dbo.staging_defi_revenue_details')
+```
 
 #COMMITING THE EXECUTION 
+```python
     cnxn.commit()
     print('data successfully loaded into SQL SERVER DATABASE')
+```
 
 #LOADING THE TABLE INTO THE DATABASE 
+```python
 concatenate_and_load(chain_df_list)
+```
 
 #CLSOING AND DISPOSING CONNECTION TO THE DATABASE
+```python
 SQL_SERVER_CONNECTION.dispose()
 
 cnxn.close()
