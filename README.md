@@ -41,7 +41,8 @@ The project aims to analyze revenue growth over time, daily revenue, monitor the
 
 Here's an example of the report we'll generate daily.
 
-'''# Importing needed libraries
+'''
+# Importing needed libraries
 import pandas as pd
 from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String, Numeric
 import os
@@ -49,7 +50,6 @@ import requests
 from datetime import date
 import sqlalchemy
 import pyodbc
-           '''
 
 # Getting current date because the data doesn't come with a date column
 now = date.today()
@@ -121,7 +121,7 @@ def concatenate_and_load(chain_list):
                            'dailyFees': sqlalchemy.types.Numeric(10,2),
                            'DATE': sqlalchemy.types.Date()})
 
--- Removing duplicates from the staging table before inserting into data warehouse table
+# Removing duplicates from the staging table before inserting into data warehouse table
 cursor.execute('WITH check_for_duplicate_data AS (\
                 SELECT defillamaId, name, module, category, CHAIN_NAME, dailyRevenue, dailyFees, DATE,\
                 ROW_NUMBER() OVER (PARTITION BY defillamaId, name, module, category, CHAIN_NAME, dailyRevenue, dailyFees, DATE\
@@ -129,16 +129,17 @@ cursor.execute('WITH check_for_duplicate_data AS (\
                 FROM [dbo].[staging_defi_revenue_details])\
                 DELETE FROM check_for_duplicate_data WHERE duplicate_count > 1')
 
--- Inserting into data warehouse table
+# Inserting into data warehouse table
 cursor.execute('INSERT INTO dbo.DW_DEFI_REVENUE_TABLE (Defi_lama_ID, Dapp_name, Module, Category, Chain_name, Daily_Revenue, Daily_Fees, Date)\
                 SELECT * FROM dbo.staging_defi_revenue_details')
 
--- Committing the execution 
+# Committing the execution 
 cnxn.commit()
 print('Data successfully loaded into SQL Server database')
 
--- Closing and disposing connection to the database
+# Closing and disposing connection to the database
 SQL_SERVER_CONNECTION.dispose()
 cnxn.close()
 '''
+
 
