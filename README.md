@@ -254,3 +254,16 @@ SQL_SERVER_CONNECTION.dispose()
 
 cnxn.close()
 ```
+
+
+
+## Step 2
+
+Automate the python script using either crontab or Windows Scheduler. In my case, I’m using Windows Scheduler, and as seen below, the script runs every day by 6:20 AM.
+
+![image](https://github.com/Hagar-zakaria/Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-/assets/93611934/de5a138b-7fa8-4c2f-905d-80059c0086b0)
+
+
+## Step 3
+
+
