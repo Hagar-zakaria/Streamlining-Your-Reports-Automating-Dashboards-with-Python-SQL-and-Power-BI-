@@ -266,4 +266,124 @@ Automate the python script using either crontab or Windows Scheduler. In my case
 
 ## Step 3
 
+Create dynamic SQL views to track important insights and then convert these views to appropriate visualizations using power bi or any BI tool.
 
+1.24HR TOTAL REVENUE
+
+```python
+    CREATE VIEW TOTAL_24HOUR_REVENUE
+    AS
+    --CREATING A VIEW TO SHOW TOTAL REVENUE
+    select round(SUM(Daily_Revenue),0) AS TOTAL_REVENUE
+    from DW_DEFI_REVENUE_TABLE
+    --WHERE CLAUSE ENSURES WE ARE ONLY GETTING DATA THE CURRENT DATE
+    WHERE Date = cast(getdate()  as date)
+```
+
+
+Below is the result when converted to a power bi card visualization.
+
+![image](https://github.com/Hagar-zakaria/Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-/assets/93611934/fa40ac94-bb36-4458-8916-a33a438c1cc7)
+
+2. 24 HOUR TOTAL REVENUE OF TOP 5 BLOCKCHAINS
+
+```python
+    --CREATING A VIEW TO SHOW THE TOP 5 BLOCKCHAINS BY REVENUE GENERATED 
+   --WITHIN THE LAST 24 HOURS.
+   CREATE VIEW TOP_5_HIGHEST_EARNING_BLOCKCHAINS_LAST_24HRS
+   AS 
+   SELECT top (5) Chain_name, 
+   round(SUM(Daily_Revenue),0) AS TOTAL_DAILY_REVENUE
+   FROM DW_DEFI_REVENUE_TABLE
+   WHERE Date = cast(getdate()  as date)
+   GROUP BY Chain_name
+   ORDER BY SUM(Daily_Revenue) DESC
+```
+
+
+Below is the result when converted to a power bi bar chart.
+
+![image](https://github.com/Hagar-zakaria/Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-/assets/93611934/3d6e74a5-686e-479d-b8b4-82412493eae3)
+
+
+3. 7 DAY REVENUE CHART
+   
+```python
+    -- CREATING A VIEW TO CALCULATE GROWTH IN TOTAL REVENUE 
+    -- OVER A 7 DAY PERIOD.
+    CREATE VIEW TOTAL_DAILY_REVENUE_7_DAYS AS 
+    select Date, sum(Daily_Revenue) as TOTAL_DAILY_REVENUE
+    from DW_DEFI_REVENUE_TABLE
+    where Date between
+    cast(getdate() - 7 as date) and
+    cast(getdate() as date)
+    group by Date
+```
+
+Below is the result when converted to a power bi line chart.
+
+![image](https://github.com/Hagar-zakaria/Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-/assets/93611934/49506d7d-a1ca-4007-8718-96e8959ce99a)
+
+
+4. TOTAL NUMBER OF ACTIVE DECENTRALIZED APPS WITHIN THE LAST 24HOURS
+
+```python
+   --AN DAPP IS CONSIDERED ACTIVE IF IT HAS GENERATED ANY FORM OF 
+  --REVENUE WITHIN 24 HOURS.
+  CREATE VIEW TOTAL_NUMBER_OF_ACTIVE_DEFI_PLATFORMS
+  AS 
+  WITH TOTAL_NUMBER_OF_ACTIVE_DEFI_PLATFORMS AS (
+  select DISTINCT Module, SUM(Daily_Revenue) AS TOTAL_REVENUE,
+  SUM(Daily_Fees) AS TOTAL_FEES
+  from DW_DEFI_REVENUE_TABLE
+  where Date = CAST(GETDATE() AS DATE)
+  and Module not like Chain_name
+  AND (Daily_Revenue IS NOT NULL
+  OR Daily_Fees IS NOT NULL)
+  GROUP BY Module
+  HAVING (SUM(Daily_Revenue) != 0
+  OR SUM(Daily_Fees) != 0))
+  SELECT COUNT(*) AS ACTIVE_DEFI_PLATFROM_COUNT
+  FROM TOTAL_NUMBER_OF_ACTIVE_DEFI_PLATFORMS
+```
+
+![image](https://github.com/Hagar-zakaria/Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-/assets/93611934/eae306bb-699b-4b91-9758-bad318fdb912)
+
+5. 24 HOUR REVENUE CHANGE
+
+```python
+--BELOW VIEW TRACKS 24 HOUR REVENUE CHANGE
+ CREATE VIEW _24HR_REVENUE_CHANGE AS
+ with todays_revenue as (
+ SELECT Chain_name, sum(Daily_Revenue) as revenue_today
+ FROM DW_DEFI_REVENUE_TABLE
+ where date = cast(getdate() as date)
+ group by Chain_name),
+ yesterdays_revenue as (
+ select Chain_name, sum(Daily_Revenue) as revenue_yesterday
+ FROM DW_DEFI_REVENUE_TABLE
+ where date = cast(getdate() - 1 as date)
+ group by Chain_name)
+ select tr.Chain_name, sum(ry.revenue_yesterday) AS YESTERDAYS_REVENUE,
+ sum(tr.revenue_today) AS TODAYS_REVENUE,
+ ((sum(tr.revenue_today) - sum(ry.revenue_yesterday)) / sum(ry.revenue_yesterday))
+ AS PERCENTAGE_CHANGE_IN_REVENUE_24HRS
+ from todays_revenue tr
+ inner join yesterdays_revenue ry
+ on tr.Chain_name = ry.Chain_name
+ group by tr.Chain_name
+```
+
+![image](https://github.com/Hagar-zakaria/Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-/assets/93611934/9a5b37b2-04d8-4885-aef1-4f6532572192)
+
+FINAL REPORT SHOWING ALL THE IMPORTANT INSIGHTS IN ONE DASHBOARD.
+
+
+![image](https://github.com/Hagar-zakaria/Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-/assets/93611934/98523438-8f3f-4c90-8a65-fbfc8fc2812b)
+
+
+Key Insights Summary
+
+1. Ethereum Dominates Revenue Stability: Over the past 7 days, Ethereum consistently leads in daily revenue generation. Its revenue stability underscores the solidity of its ecosystem.
+2. BASE Chain's Revenue Decline: Notably, Friend Tech, a decentralized app on the BASE chain, experienced a notable decline in revenue recently.
+3. Polygon's Revenue Fluctuation: Polygon witnessed a substantial surge in revenue, followed by a sharp decline within 24 hours. The majority of this revenue surge stemmed from Metamask, a widely-used decentralized wallet for storing cryptocurrencies.
