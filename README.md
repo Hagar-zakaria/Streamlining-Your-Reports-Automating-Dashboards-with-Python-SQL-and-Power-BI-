@@ -43,7 +43,8 @@ The project aims to analyze revenue growth over time, daily revenue, monitor the
 
 Here's an example of the report we'll generate daily.
 
-### Importing Needed Libraries
+
+This will render as:
 
 ```python
 import pandas as pd
@@ -56,8 +57,7 @@ from sqlalchemy import MetaData
 from sqlalchemy import Table, Column, Integer, String, Numeric
 from sqlalchemy.dialects.mysql import VARCHAR
 import pyodbc
-
-
+```
 
 ### Getting Current Date Because the Doesn't Come With a Date Column
 
@@ -67,4 +67,5 @@ from datetime import date
 now = date.today()
 todays_date = now.strftime('%Y/%m/%d')
 todays_date
+```
 
