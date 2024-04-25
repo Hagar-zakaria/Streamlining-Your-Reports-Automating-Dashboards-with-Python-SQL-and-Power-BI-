@@ -59,7 +59,7 @@ from sqlalchemy.dialects.mysql import VARCHAR
 import pyodbc
 ```
 
-### Getting Current Date Because the Doesn't Come With a Date Column
+### Getting Current Date Because it doesn't Come With a Date Column
 
 ```python
 from datetime import date
