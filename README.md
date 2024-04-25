@@ -58,7 +58,9 @@ from sqlalchemy.dialects.mysql import VARCHAR
 import pyodbc
 
 
+
 ### Getting Current Date Because the Doesn't Come With a Date Column
+
 ```python
 from datetime import date
 
