@@ -1,7 +1,9 @@
-# Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-
-As a data analyst, this is one of the most interesting projects you'll work on because you'll see how business metrics change in real time. In the real world, companies receive new data daily, so dynamic dashboard reports are essential.
+# Streamlining Your Reports: Automating Dashboards with Python, SQL, and Power BI
 
-# WHAT ARE DYNAMIC DASHBARD REPORTS?
+As a data analyst, this is one of the most interesting projects you'll work on because you'll see how business metrics change in real-time. In the real world, companies receive new data daily, so dynamic dashboard reports are essential.
+
+## What Are Dynamic Dashboard Reports?
+
 Dynamic dashboard reports are essentially real-time snapshots of data that reflect the latest updates or changes in a database.
 
 For example, let's consider an online store. Yesterday, it received 2500 orders, but today it received 2800 orders. A static dashboard would only display the total number of orders from the previous day (2500). However, a dynamic dashboard report would show the most recent data, indicating that the store received 2800 orders today. It can also illustrate the growth in the number of orders between the previous day and the current day.
@@ -20,18 +22,18 @@ Here's an example of the report we'll generate daily.
 
 ![image](https://github.com/Hagar-zakaria/Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-/assets/93611934/6e2fe7a5-d2f0-425b-95d4-996e14395f89)
 
-# Tools and tech used:
+## Tools and Tech Used:
 
 1. Python
 2. SQL SERVER DATABASE
 3. POWER BI
-4. Windows task scheduler
+4. Windows Task Scheduler
 
-# PROJECT ARCHITECTURE
+## Project Architecture
 
 ![image](https://github.com/Hagar-zakaria/Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-/assets/93611934/cc12ef96-f55a-4202-a85b-ee61a2d00405)
 
-# STEP 1
+## Step 1
 
 Dynamic dashboard reports are crucial for tracking key business growth metrics such as customer churn/retention rate, revenue growth/decline, and new customer count on various time scales like daily, weekly, monthly, or yearly.
 
@@ -41,8 +43,8 @@ The project aims to analyze revenue growth over time, daily revenue, monitor the
 
 Here's an example of the report we'll generate daily.
 
+### Importing Needed Libraries
 
-#Importing needed libraries
 ```python
 import pandas as pd
 from sqlalchemy import create_engine
@@ -54,217 +56,4 @@ from sqlalchemy import MetaData
 from sqlalchemy import Table, Column, Integer, String, Numeric
 from sqlalchemy.dialects.mysql import VARCHAR
 import pyodbc
-```
-
-#GETTING CURRENT DATE BECAUSE THE DOESN'T COME WITH A DATE COLUMN
-```python
-now = date.today()
-now
-todays_date = now.strftime('%Y/%m/%d')
-todays_date
-```
-
-#EXTRACTING DATA FROM ETHEREUM API
-```python
-eth_api = 'https://api.llama.fi/overview/fees/ethereum?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue'
-params = {'chain':'Ethereum'}
-r = requests.get(eth_api,
-                params = params)
-eth_json = r.json()
-eth_df = pd.DataFrame(eth_json['protocols'])
-eth_df.head(3)
-```
-
-#CREATING A FUNCTION TO EXTRACT DATA FROM ANY API LINK PROVIDED
-```python
-def extract_from_api(api_url, chain_name,params):
-    params = {'chain': chain_name}
-    r = requests.get(api_url,
-                    params = params)
-    chain_json = r.json()
-    chain_df = pd.DataFrame(chain_json['protocols'])
-    return chain_df
-```
-
-#THIS FUNCTION TRANSFORMS THE DATA, AND KEEPS THE NECESSARY COLUMNS NEEDED
-```python
-def transform_data(chain_df, chain_name):
-    cols = ['defillamaId', 'name', 'module','category', 'dailyRevenue', 'dailyFees']
-    chain_df = chain_df[cols]
-    chain_df.insert(4, "CHAIN_NAME", chain_name)
-    chain_df.insert(7, "DATE", todays_date)
-    return chain_df
-```
-
-#THIS FUNCTION EXECUTES THE SET OF FUNCTIONS CREATED ABOVE 
-```python
-def extract_and_transfrom(api_url, chain_name, params):
-    chain_df = extract_from_api(api_url, chain_name, params)
-    chain_df = transform_data(chain_df, chain_name)
-    return chain_df
-```
-
-#RUNNING THE ETL FUNCTIONS CREATED ON EACH API LINK PROVIDED
-```python
-eth_df = extract_and_transfrom('https://api.llama.fi/overview/fees/ethereum?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'ETHEREUM', params)
-
-arb_df = extract_and_transfrom('https://api.llama.fi/overview/fees/arbitrum?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'ARBITRUM', params)
-
-op_df = extract_and_transfrom('https://api.llama.fi/overview/fees/optimism?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'OPTIMISM', params)
-
-bsc_df = extract_and_transfrom('https://api.llama.fi/overview/fees/BSC?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'BSC', params)
-
-polygon_df = extract_and_transfrom('https://api.llama.fi/overview/fees/polygon?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'POLYGON', params)
-
-avalache_df = extract_and_transfrom('https://api.llama.fi/overview/fees/avalanche?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'AVALANCHE', params)
-
-base_df = extract_and_transfrom('https://api.llama.fi/overview/fees/base?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'BASE', params)
-
-solana_df = extract_and_transfrom('https://api.llama.fi/overview/fees/solana?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'SOLANA', params)
-
-cronos_df = extract_and_transfrom('https://api.llama.fi/overview/fees/cronos?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'CRONOS', params)
-```
-
-#PUTTING ALL PANDAS DATAFRAMES INTO A LIST
-```python
-chain_df_list = [eth_df,
-                arb_df,
-                op_df,
-                bsc_df,
-                polygon_df,
-                base_df,
-                 avalache_df,
-                solana_df,
-                cronos_df]
-```
-            
-#IMPORTING SQLALCHEMY LIBRARIES
-```python
-from sqlalchemy import MetaData
-from sqlalchemy import Table, Column, Integer, String, Numeric
-from sqlalchemy.dialects.mysql import VARCHAR
-import pyodbc
-```
-
-#CONNECTING WITH SQL SERVER DATABASE USING SQL ALCHEMY 
-```python
-SERVER = os.environ.get('MS SQL SERVER NAME')
-DRIVER = os.environ.get('MS SQL SERVER DRIVER')
-database_name = 'defi_db'
-SQL_SERVER_CONNECTION = sqlalchemy.create_engine(f'mssql://{SERVER}/{database_name}?driver={DRIVER}')
-
-
-SERVER = os.environ.get('MS SQL SERVER NAME')
-DRIVER = os.environ.get('MS SQL SERVER DRIVER')
-database_name = 'defi_db'
-
-cnxn_str = (f"Driver={DRIVER};"
-            f"Server= {SERVER};"
-            "Database=defi_db;"
-            "Trusted_Connection=yes;")
-cnxn = pyodbc.connect(cnxn_str)
-cursor = cnxn.cursor()
-```
-
-#THIS FUNCTION LOADS THE DATA EXTRACTED FROM THE API INTO A SQL SERVER DATABASE
-#ALL THE PANDAS DATAFRAME TABLES GOTTEN FROM THE API CALL AND CONCATENATED INTO 
-#ONE TABLE AND LOADED INTO THE DATABASE USING THIS FUNCTION BELOW
-```python
-def concatenate_and_load(chain_list):
-    final_df = pd.concat(chain_list)
-    final_df.to_sql('staging_defi_revenue_details', SQL_SERVER_CONNECTION, 
-    if_exists = 'replace', index = False,
-                   dtype = {'defillamaId': sqlalchemy.types.INTEGER(),
-                           'name': sqlalchemy.types.String(50),
-                           'module': sqlalchemy.types.String(50),
-                           'category': sqlalchemy.types.String(50),
-                           'CHAIN_NAME': sqlalchemy.types.String(50),
-                           'dailyRevenue': sqlalchemy.types.Numeric(10,2),
-                           'dailyFees':sqlalchemy.types.Numeric(10,2),
-                           'DATE': sqlalchemy.types.Date()})
-```
-
-#REMOVING DUPLICATES FROM THE STAGING TABLE BEFORE INSERTING INTO
-#DATA WAREHOUSE TABLE
-```python  
-    cursor.execute('with check_for_duplicate_data as (\
-                    select defillamaId, name, module, category,\
-                    CHAIN_NAME, dailyRevenue, dailyFees, DATE,\
-                    row_number() over (partition by defillamaId,\
-                    name, module, category, CHAIN_NAME, dailyRevenue, dailyFees, DATE\
-                    order by defillamaId, name, module, category,\
-                    CHAIN_NAME, dailyRevenue, dailyFees, DATE) as duplicate_count\
-                    from [dbo].[staging_defi_revenue_details])\
-                    delete from check_for_duplicate_data \
-                    where duplicate_count > 1')
-```
-
-#INSERTING INTO DATA WAREHOUSE TABLE
-```python
-    cursor.execute('INSERT INTO dbo.DW_DEFI_REVENUE_TABLE 
-    (Defi_lama_ID, Dapp_name, Module, Category, Chain_name, Daily_Revenue, 
-     Daily_Fees, Date) select * from dbo.staging_defi_revenue_details')
-```
-
-#COMMITING THE EXECUTION 
-```python
-    cnxn.commit()
-    print('data successfully loaded into SQL SERVER DATABASE')
-```
-
-#LOADING THE TABLE INTO THE DATABASE 
-```python
-concatenate_and_load(chain_df_list)
-```
-
-#CLSOING AND DISPOSING CONNECTION TO THE DATABASE
-```python
-SQL_SERVER_CONNECTION.dispose()
-
-cnxn.close()
 '''
-
-# STEP 2
-
-Automate the python script using either crontab or windows scheduler, in my case I’m using windows scheduler and as seen below the script runs everyday by 6:20am.
-
-![image](https://github.com/Hagar-zakaria/Streamlining-Your-Reports-Automating-Dashboards-with-Python-SQL-and-Power-BI-/assets/93611934/e5f83b1f-169f-4b0a-a012-764ee4ea76e4)
-
-# Here's a step-by-step guide on how to use Windows Task Scheduler to automate the execution of a Python script:
-
-1. Open Task Scheduler:
-
-Press Windows + R to open the Run dialog.
-Type taskschd.msc and press Enter to open Task Scheduler.
-
-2. Create a New Task:
-
-In Task Scheduler, click on Create Basic Task in the right-hand panel.
-
-3. Name and Describe the Task:
-
-Enter a name and description for your task to help you identify it later.
-
-4. Choose a Trigger:
-
-Select Daily as the trigger if you want the task to run every day.
-Set the time to 6:20 AM.
-
-5. Action:
-
-Choose Start a program as the action.
-Click Browse and select the Python executable (usually located in C:\PythonXX\python.exe, where XX is the version number).
-In the Add arguments field, provide the path to your Python script. For example, "C:\path\to\your\script.py".
-
-6. Conditions (Optional):
-
-Optionally, you can set conditions for when the task will run. For example, you might want to run it only when the computer is idle.
-
-7. Settings (Optional):
-
-Adjust any additional settings as needed. For example, you can choose to stop the task if it runs for longer than a specified time.
-
-8. Finish:
-
-Review the details of your task and click Finish to create it.
-Your Python script will now run automatically every day at 6:20 AM as scheduled. Make sure to test it to ensure that it runs correctly according to your requirements.
