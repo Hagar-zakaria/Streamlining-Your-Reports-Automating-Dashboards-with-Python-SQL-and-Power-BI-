@@ -44,7 +44,7 @@ The project aims to analyze revenue growth over time, daily revenue, monitor the
 Here's an example of the report we'll generate daily.
 
 
-This will render as:
+### Importing Needed Libraries
 
 ```python
 import pandas as pd
@@ -69,3 +69,188 @@ todays_date = now.strftime('%Y/%m/%d')
 todays_date
 ```
 
+### Extracting Data from Ethereum API
+
+
+```python
+eth_api = 'https://api.llama.fi/overview/fees/ethereum?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue'
+params = {'chain':'Ethereum'}
+r = requests.get(eth_api,
+                params = params)
+eth_json = r.json()
+eth_df = pd.DataFrame(eth_json['protocols'])
+eth_df.head(3)
+```
+
+### Creating a Function to Extract Data from Any API Link Provided
+
+
+```python
+def extract_from_api(api_url, chain_name,params):
+    params = {'chain': chain_name}
+    r = requests.get(api_url,
+                    params = params)
+    chain_json = r.json()
+    chain_df = pd.DataFrame(chain_json['protocols'])
+    return chain_df
+```
+
+### This Function Transforms the Data and Keeps the Necessary Columns Needed
+
+
+```python
+def transform_data(chain_df, chain_name):
+    cols = ['defillamaId', 'name', 'module','category', 'dailyRevenue', 'dailyFees']
+    chain_df = chain_df[cols]
+    chain_df.insert(4, "CHAIN_NAME", chain_name)
+    chain_df.insert(7, "DATE", todays_date)
+    return chain_df
+```
+
+### This Function Executes the Set of Functions Created Above
+
+```python
+def extract_and_transfrom(api_url, chain_name, params):
+    chain_df = extract_from_api(api_url, chain_name, params)
+    chain_df = transform_data(chain_df, chain_name)
+    return chain_df
+```
+
+### Running the ETL Functions Created on Each API Link Provided
+
+
+```python
+eth_df = extract_and_transfrom('https://api.llama.fi/overview/fees/ethereum?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'ETHEREUM', params)
+
+arb_df = extract_and_transfrom('https://api.llama.fi/overview/fees/arbitrum?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'ARBITRUM', params)
+
+op_df = extract_and_transfrom('https://api.llama.fi/overview/fees/optimism?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'OPTIMISM', params)
+
+bsc_df = extract_and_transfrom('https://api.llama.fi/overview/fees/BSC?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'BSC', params)
+
+polygon_df = extract_and_transfrom('https://api.llama.fi/overview/fees/polygon?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'POLYGON', params)
+
+avalache_df = extract_and_transfrom('https://api.llama.fi/overview/fees/avalanche?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'AVALANCHE', params)
+
+base_df = extract_and_transfrom('https://api.llama.fi/overview/fees/base?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'BASE', params)
+
+solana_df = extract_and_transfrom('https://api.llama.fi/overview/fees/solana?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'SOLANA', params)
+
+cronos_df = extract_and_transfrom('https://api.llama.fi/overview/fees/cronos?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true&dataType=dailyRevenue', 'CRONOS', params)
+```
+
+### Putting All Pandas Dataframes into a List
+
+```python
+chain_df_list = [eth_df,
+                arb_df,
+                op_df,
+                bsc_df,
+                polygon_df,
+                base_df,
+                 avalache_df,
+                solana_df,
+                cronos_df]
+
+```
+
+### Importing SQLAlchemy Libraries
+
+```python
+from sqlalchemy import MetaData
+from sqlalchemy import Table, Column, Integer, String, Numeric
+from sqlalchemy.dialects.mysql import VARCHAR
+import pyodbc
+```
+
+### Connecting with SQL Server Database Using SQLAlchemy
+
+
+```python
+SERVER = os.environ.get('MS SQL SERVER NAME')
+DRIVER = os.environ.get('MS SQL SERVER DRIVER')
+database_name = 'defi_db'
+SQL_SERVER_CONNECTION = sqlalchemy.create_engine(f'mssql://{SERVER}/{database_name}?driver={DRIVER}')
+
+
+SERVER = os.environ.get('MS SQL SERVER NAME')
+DRIVER = os.environ.get('MS SQL SERVER DRIVER')
+database_name = 'defi_db'
+
+cnxn_str = (f"Driver={DRIVER};"
+            f"Server= {SERVER};"
+            "Database=defi_db;"
+            "Trusted_Connection=yes;")
+cnxn = pyodbc.connect(cnxn_str)
+cursor = cnxn.cursor()
+```
+
+### This Function Loads the Data Extracted from the API into a SQL Server Database
+
+
+```python
+def concatenate_and_load(chain_list):
+    final_df = pd.concat(chain_list)
+    final_df.to_sql('staging_defi_revenue_details', SQL_SERVER_CONNECTION, 
+    if_exists = 'replace', index = False,
+                   dtype = {'defillamaId': sqlalchemy.types.INTEGER(),
+                           'name': sqlalchemy.types.String(50),
+                           'module': sqlalchemy.types.String(50),
+                           'category': sqlalchemy.types.String(50),
+                           'CHAIN_NAME': sqlalchemy.types.String(50),
+                           'dailyRevenue': sqlalchemy.types.Numeric(10,2),
+                           'dailyFees':sqlalchemy.types.Numeric(10,2),
+                           'DATE': sqlalchemy.types.Date()})
+```
+
+### Removing Duplicates from the Staging Table Before Inserting Into Data Warehouse Table
+
+
+
+```python
+    cursor.execute('with check_for_duplicate_data as (\
+                    select defillamaId, name, module, category,\
+                    CHAIN_NAME, dailyRevenue, dailyFees, DATE,\
+                    row_number() over (partition by defillamaId,\
+                    name, module, category, CHAIN_NAME, dailyRevenue, dailyFees, DATE\
+                    order by defillamaId, name, module, category,\
+                    CHAIN_NAME, dailyRevenue, dailyFees, DATE) as duplicate_count\
+                    from [dbo].[staging_defi_revenue_details])\
+                    delete from check_for_duplicate_data \
+                    where duplicate_count > 1')
+
+```
+
+### Inserting Into Data Warehouse Table
+
+```python
+    cursor.execute('INSERT INTO dbo.DW_DEFI_REVENUE_TABLE 
+    (Defi_lama_ID, Dapp_name, Module, Category, Chain_name, Daily_Revenue, 
+     Daily_Fees, Date) select * from dbo.staging_defi_revenue_details')
+
+```
+
+### Commiting the Execution
+
+```python
+    cnxn.commit()
+    print('data successfully loaded into SQL SERVER DATABASE')
+
+```
+
+### Loading the Table Into the Database
+
+
+```python
+concatenate_and_load(chain_df_list)
+```
+
+
+### Closing and Disposing Connection to the Database
+
+
+```python
+SQL_SERVER_CONNECTION.dispose()
+
+cnxn.close()
+```
